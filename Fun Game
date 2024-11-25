@@ -1,0 +1,95 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+SCREEN_WIDTH, SCREEN_HEIGHT = 400, 500
+GRID_SIZE = 40
+ROWS, COLS = 10, 10
+FPS = 60
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+COLORS = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]
+
+# Setup
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Block Row Filling Game")
+clock = pygame.time.Clock()
+
+# Grid initialization
+grid = [[None for _ in range(COLS)] for _ in range(ROWS)]
+
+# Generate a random block
+def generate_block():
+    color = random.choice(COLORS)
+    return {"shape": [(0, 0)], "color": color}  # Single block for simplicity
+
+# Draw the grid and blocks
+def draw_grid():
+    for y in range(ROWS):
+        for x in range(COLS):
+            rect = pygame.Rect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE)
+            pygame.draw.rect(screen, GRAY, rect, 1)
+            if grid[y][x]:
+                pygame.draw.rect(screen, grid[y][x], rect)
+
+# Check for filled rows
+def check_rows():
+    global grid
+    rows_cleared = 0
+    for y in range(ROWS):
+        if all(grid[y][x] is not None for x in range(COLS)):
+            del grid[y]
+            grid.insert(0, [None] * COLS)
+            rows_cleared += 1
+    return rows_cleared
+
+# Main game loop
+def main():
+    running = True
+    score = 0
+    block = generate_block()
+    block_x, block_y = 0, 0
+
+    while running:
+        screen.fill(WHITE)
+        draw_grid()
+
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT and block_x > 0:
+                    block_x -= 1
+                elif event.key == pygame.K_RIGHT and block_x < COLS - 1:
+                    block_x += 1
+                elif event.key == pygame.K_DOWN and block_y < ROWS - 1:
+                    block_y += 1
+                elif event.key == pygame.K_SPACE:  # Place block
+                    grid[block_y][block_x] = block["color"]
+                    score += check_rows()
+                    block = generate_block()
+                    block_x, block_y = 0, 0
+
+        # Draw the current block
+        rect = pygame.Rect(block_x * GRID_SIZE, block_y * GRID_SIZE, GRID_SIZE, GRID_SIZE)
+        pygame.draw.rect(screen, block["color"], rect)
+
+        # Draw score
+        font = pygame.font.Font(None, 36)
+        score_text = font.render(f"Score: {score}", True, BLACK)
+        screen.blit(score_text, (10, SCREEN_HEIGHT - 40))
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
